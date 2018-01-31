@@ -1,0 +1,39 @@
+This package contains useful classes and methods that can be reused throughout the program.
+Other useful utilities can be added to this package to be used. As they are added, add
+them to the list with a short description of how to use it.
+
+Index:
+1.	RobotLog
+2.	MathUtil
+
+1.	RobotLog
+	
+	- RobotLog is a method used for displaying messages on the SmartDashboard. Two methods within
+		it can be accessed. 
+		
+		void RobotLog.init()
+			-	This method should be place in the the initialization function of RobotMain. 
+				RobotLog.init() creates the RobotLog to be used later.
+		
+		void RobotLog.putMessage(String message)
+			-	putMessage() can be used in any part of the program necessary for displaying values
+				that can be read during and after testing. It takes a String argument that gets 
+				added to an array of 64 Strings, which are displayed to the SmartDashboard with 
+				a time stamp of when it was printed.
+				
+2.	MathUtil
+	
+	- This class contains useful snippets of code that would otherwise be repeated unnecessarily.
+		It is more of a convenience than a necessity, but it makes the code easier to follow.
+		
+		double/float MathUtil.limitMin(double/float input, double/float minimum)
+			-	MathUtil.limitMin() takes two values, and prevents the output from being lower than
+				the value set as the minimum. The method is overloaded for either double or float
+				inputs and outputs.
+				
+		double/float MathUtil.limitMax(double/float input, double/float maximum)
+			-	This method is the same as the above, but is used for setting a maximum value.
+			
+		double/float MathUtil.setLimits(double/float input, double/float minimum, double/float maximum)
+			-	This method implements the setting of both a minimum and a maximum.
+			
