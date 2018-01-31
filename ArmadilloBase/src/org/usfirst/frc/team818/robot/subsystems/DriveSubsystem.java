@@ -24,10 +24,8 @@ public class DriveSubsystem extends Subsystem {
 	private static final double[] ROTATE_PID_VALUES = { 0.05, 0, 0.1 };
 	private static final double[] ROTATE_PID_RANGE = { -0.4, 0.4 };
 	private static final double ROTATE_PID_TOLERANCE = 1;
-	private static final double[] SPEEDLIMIT_PID_VALUES = { 0.01, 0.001, 0 };
-	private static final double[] SPEEDLIMIT_PID_RANGE = { -1, 1 };
 
-	private PIDController straightControllerLeft, straightControllerRight, rotateController, speedLimitController;
+	private PIDController dynamicBrakingControllerLeft, dynamicBrakingControllerRight, gyroController;
 	private DoublePIDOutput pidOutputRotate, pidOutputRight, pidOutputLeft;
 
 	private boolean driveEnabled;
@@ -58,35 +56,28 @@ public class DriveSubsystem extends Subsystem {
 		pidOutputLeft = new DoublePIDOutput();
 		pidOutputRotate = new DoublePIDOutput();
 
-		straightControllerRight = new PIDController(STRAIGHT_PID_VALUES[0], STRAIGHT_PID_VALUES[1],
+		dynamicBrakingControllerRight = new PIDController(STRAIGHT_PID_VALUES[0], STRAIGHT_PID_VALUES[1],
 				STRAIGHT_PID_VALUES[2], rightEncoder, pidOutputRight);
-		straightControllerRight.setOutputRange(STRAIGHT_PID_RANGE[0], STRAIGHT_PID_RANGE[1]);
-		straightControllerRight.setInputRange(Double.MAX_VALUE, Double.MIN_VALUE);
-		straightControllerRight.setSetpoint(0);
-		straightControllerRight.setContinuous(false);
+		dynamicBrakingControllerRight.setOutputRange(STRAIGHT_PID_RANGE[0], STRAIGHT_PID_RANGE[1]);
+		dynamicBrakingControllerRight.setInputRange(Double.MAX_VALUE, Double.MIN_VALUE);
+		dynamicBrakingControllerRight.setSetpoint(0);
+		dynamicBrakingControllerRight.setContinuous(false);
 
-		straightControllerLeft = new PIDController(STRAIGHT_PID_VALUES[0], STRAIGHT_PID_VALUES[1],
+		dynamicBrakingControllerLeft = new PIDController(STRAIGHT_PID_VALUES[0], STRAIGHT_PID_VALUES[1],
 				STRAIGHT_PID_VALUES[2], leftEncoder, pidOutputLeft);
-		straightControllerLeft.setOutputRange(STRAIGHT_PID_RANGE[0], STRAIGHT_PID_RANGE[1]);
-		straightControllerLeft.setInputRange(Double.MAX_VALUE, Double.MIN_VALUE);
-		straightControllerLeft.setSetpoint(0);
-		straightControllerLeft.setContinuous(false);
+		dynamicBrakingControllerLeft.setOutputRange(STRAIGHT_PID_RANGE[0], STRAIGHT_PID_RANGE[1]);
+		dynamicBrakingControllerLeft.setInputRange(Double.MAX_VALUE, Double.MIN_VALUE);
+		dynamicBrakingControllerLeft.setSetpoint(0);
+		dynamicBrakingControllerLeft.setContinuous(false);
 
-		rotateController = new PIDController(ROTATE_PID_VALUES[0], ROTATE_PID_VALUES[1], ROTATE_PID_VALUES[2],
+		gyroController = new PIDController(ROTATE_PID_VALUES[0], ROTATE_PID_VALUES[1], ROTATE_PID_VALUES[2],
 				driveGyro, pidOutputRotate);
-		rotateController.setOutputRange(ROTATE_PID_RANGE[0], ROTATE_PID_RANGE[1]);
-		rotateController.setInputRange(Double.MAX_VALUE, Double.MIN_VALUE);
-		rotateController.setAbsoluteTolerance(ROTATE_PID_TOLERANCE);
-		rotateController.setContinuous();
-		rotateController.setSetpoint(0);
-		
-		speedLimitController = new PIDController(SPEEDLIMIT_PID_VALUES[0], SPEEDLIMIT_PID_VALUES[1], SPEEDLIMIT_PID_VALUES[2],
-				driveGyro, pidOutputRotate);
-		speedLimitController.setOutputRange(SPEEDLIMIT_PID_RANGE[0], SPEEDLIMIT_PID_RANGE[1]);
-		speedLimitController.setInputRange(Double.MAX_VALUE, Double.MIN_VALUE);
-		speedLimitController.setContinuous();
-		speedLimitController.setSetpoint(0);
-		
+		gyroController.setOutputRange(ROTATE_PID_RANGE[0], ROTATE_PID_RANGE[1]);
+		gyroController.setInputRange(Double.MAX_VALUE, Double.MIN_VALUE);
+		gyroController.setAbsoluteTolerance(ROTATE_PID_TOLERANCE);
+		gyroController.setContinuous();
+		gyroController.setSetpoint(0);
+				
 		leftEncoder.setDistancePerPulse((2*Math.PI*Constants.wheelRadius)/360);
 		rightEncoder.setDistancePerPulse((2*Math.PI*Constants.wheelRadius)/360);
 	}
@@ -176,41 +167,41 @@ public class DriveSubsystem extends Subsystem {
 	public void enablePID(String pidType) {
 		if (driveEnabled) {
 			if (pidType.equals("straight")) {
-				if (rotateController.isEnabled())
-					rotateController.disable();
-				if (!straightControllerRight.isEnabled())
-					straightControllerRight.enable();
-				if (!straightControllerLeft.isEnabled())
-					straightControllerLeft.enable();
+				if (gyroController.isEnabled())
+					gyroController.disable();
+				if (!dynamicBrakingControllerRight.isEnabled())
+					dynamicBrakingControllerRight.enable();
+				if (!dynamicBrakingControllerLeft.isEnabled())
+					dynamicBrakingControllerLeft.enable();
 			} else if (pidType.equals("rotate")) {
-				if (straightControllerRight.isEnabled())
-					straightControllerRight.disable();
-				if (straightControllerLeft.isEnabled())
-					straightControllerLeft.disable();
-				if (!rotateController.isEnabled())
-					rotateController.enable();
+				if (dynamicBrakingControllerRight.isEnabled())
+					dynamicBrakingControllerRight.disable();
+				if (dynamicBrakingControllerLeft.isEnabled())
+					dynamicBrakingControllerLeft.disable();
+				if (!gyroController.isEnabled())
+					gyroController.enable();
 			}
 		}
 	}
 
 	public void disablePID() {
 		if (driveEnabled) {
-			if (rotateController.isEnabled())
-				rotateController.disable();
-			if (straightControllerRight.isEnabled())
-				straightControllerRight.disable();
-			if (straightControllerLeft.isEnabled())
-				straightControllerLeft.disable();
+			if (gyroController.isEnabled())
+				gyroController.disable();
+			if (dynamicBrakingControllerRight.isEnabled())
+				dynamicBrakingControllerRight.disable();
+			if (dynamicBrakingControllerLeft.isEnabled())
+				dynamicBrakingControllerLeft.disable();
 		}
 	}
 
 	public void setRotatePoint(double angle) {
 		if (driveEnabled)
-			rotateController.setSetpoint(angle);
+			gyroController.setSetpoint(angle);
 	}
 
 	public boolean rotateOnTarget() {
-		return (driveEnabled) ? rotateController.onTarget() : true;
+		return (driveEnabled) ? gyroController.onTarget() : true;
 	}
 
 	public double getPIDOutputRotate() {
@@ -226,7 +217,7 @@ public class DriveSubsystem extends Subsystem {
 	}
 
 	public void setRotatePID(double p, double i, double d) {
-		rotateController.setPID(p, i, d);
+		gyroController.setPID(p, i, d);
 	}
 
 }
